@@ -1,0 +1,119 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGODB_URL")
+}
+
+enum Role {
+  admin
+  user
+  bot
+  baned
+}
+
+model User {
+  id                  String    @id @default(auto()) @map("_id") @db.ObjectId
+  username            String    @unique
+  password            String
+  email               String?   @unique
+  emailVerified       DateTime?
+  secondLevelPassword Int?
+  refresh_token       String?   @db.String
+  access_token        String?   @db.String
+  expires_at          Int?
+  id_token            String?   @db.String
+  session_state       String?
+  createAt            DateTime  @default(now())
+  updateAt            DateTime?
+  cash                Int       @default(0)
+  memberShip          Boolean   @default(false)
+  role                Role      @default(user)
+
+  characterId String?   @unique @db.ObjectId
+  articleIds  String[] @db.ObjectId
+
+  character Character?
+  articles  Article[]
+  comments  Comment[]
+}
+
+model Character {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?  @unique
+  vipLevel      Int      @default(0)
+  indexs        String[]
+  assets        String[]
+  skills        String[]
+  equipments    String[]
+  configuration String[]
+  friends       String[]
+  mission       Int      @default(0)
+  physicalIndex Int      @default(100)
+  bag    Bag?
+  clanId String @unique @db.ObjectId
+  clan   Clan   @relation(fields: [clanId], references: [id])
+
+  userId      String  @unique @db.ObjectId
+  user        User    @relation(fields: [userId], references: [id])
+  characterId String? @db.ObjectId
+}
+
+model Clan {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String
+  mesenge     MesengeClan[]
+  member      Character[]
+}
+
+model MesengeClan {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  body   String
+  clanId String @unique @db.ObjectId
+  clan   Clan   @relation(fields: [clanId], references: [id])
+}
+
+model Bag {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  body        Int[]     @default([])
+  characterId String    @unique @db.ObjectId
+  character   Character @relation(fields: [characterId], references: [id])
+}
+
+model Article {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  slug        String   @unique
+  title       String
+  description String?
+  body        String
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  authorId String @db.ObjectId
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  comments Comment[]
+}
+
+model Comment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorId String @db.ObjectId
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  articleId String  @db.ObjectId
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+}
